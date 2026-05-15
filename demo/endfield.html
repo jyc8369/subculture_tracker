@@ -950,16 +950,20 @@ const renderRecords = (rows, config) => {
   }
 };
 
+const calcTotalStars = rows => {
+  const totalPulls = Array.isArray(rows)
+    ? rows.reduce((sum, row) => sum + (Number(row.count) || 0), 0)
+    : 0;
+  return totalPulls * 500;
+};
+
 const renderStats = (rows, config) => {
   const statCards = document.querySelectorAll('.stat-card strong');
 
   if (statCards.length < 4) return;
 
   const totalPulls = rows.length;
-
-  const totalStars = rows.reduce((sum, row) => {
-    return sum + (row.count || 0);
-  }, 0);
+  const totalStars = calcTotalStars(rows);
 
   const topCount = rows.filter(
     row => row.qualityLevel === config.pityTopQuality
