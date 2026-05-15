@@ -25,11 +25,11 @@
 </head>
 <body>
 	<header class="navbar">
+		<button class="home" type="button" onclick="location.href='/' ;" aria-label="Home"></button>
 		<div class="logo">ARKNIGHTS ENDFIELD</div>
 		<nav aria-label="메인 네비게이션">
 			<button class="settings-btn" type="button" onclick="openSettingsModal()">Settings</button>
 		</nav>
-		<button class="btn" type="button" onclick="location.href='/' ;">home</button>
 	</header>
 
 	<main class="container">
@@ -39,21 +39,7 @@
 					<p class="eyebrow">선택</p>
 					<h2>헤드 헌팅</h2>
 				</div>
-				<div class="side-rail-list">
-					<button class="side-rail-item active" type="button" data-banner="헤드 헌팅 1" data-pool-type="1">
-						<span class="side-rail-item-title">헤드 헌팅 1</span>
-						<div class="banner-note-group">
-							<div class="banner-note">
-								<p class="banner-note-value">??/80</p>
-								<p class="banner-note-label">6✦ 천장</p>
-							</div>
-							<div class="banner-note">
-								<p class="banner-note-value">??/10</p>
-								<p class="banner-note-label">5✦ 천장</p>
-							</div>
-						</div>
-					</button>
-				</div>
+				<div class="side-rail-list"></div>
 		</aside>
 			<section class="main-rail">
 				<article class="card tracker-card">
@@ -134,9 +120,10 @@
       <div id="file-dropdown" class="dropdown-list hidden" role="listbox" tabindex="-1"></div>
     </div>
     <button id="load-file-button" type="button" class="primary-button">선택된 파일 불러오기</button>
+    <p id="file-list-status" class="form-note"></p>
   </div>
 </div>
 <script src="/game/common-tracker.js"></script>
-<script src="/game/arknights_endfield.js"></script>
+<script src="/game/config_arknights_endfield.js"></script>
 </body>
 </html>

@@ -173,12 +173,14 @@ def remove_duplicate_endfield_files(output_dir: str, token: str, keep_filename: 
         except Exception:
             continue
 
-        if data.get('token') == token:
+        existing_id = data.get('id')
+        existing_token = data.get('token')
+        if any(str(value) == str(token) for value in (existing_id, existing_token) if value is not None):
             try:
                 json_file.unlink()
-                print(f"[endfield] removed duplicate token file: {json_file}")
+                print(f"[endfield] removed duplicate file: {json_file}")
             except OSError:
-                print(f"[endfield] failed to remove duplicate token file: {json_file}")
+                print(f"[endfield] failed to remove duplicate file: {json_file}")
 
 
 def build_request(url: str, token: str, pool_type: Optional[str] = None) -> tuple[str, dict[str, str]]:

@@ -352,9 +352,6 @@ def fetch_data_with_post(url: str) -> dict:
             print(f"[wuwa] error for cardPoolType={card_pool_type} ({pool_name}): {exc}")
             traceback.print_exc()
 
-        if card_pool_type < 9:
-            time.sleep(1)
-
     total_records = sum(len(lst) for lst in all_records.values())
     print(f"[wuwa] total records collected={total_records}")
     return all_records
@@ -450,7 +447,7 @@ def build_wuwa_schema(records: dict, player_id: str) -> dict[str, Any]:
             })
 
     return {
-        'id': player_id,
+        'id': str(player_id) if player_id is not None else None,
         'banners': banners,
     }
 
@@ -469,12 +466,13 @@ def remove_duplicate_wuwa_files(output_dir: str, identifier: str, keep_filename:
         except Exception:
             continue
 
-        if data.get('id') == identifier:
-            try:
+        try:
+            existing_id = data.get('id')
+            if existing_id is not None and str(existing_id) == str(identifier):
                 path.unlink()
                 print(f"[wuwa] removed duplicate file: {path}")
-            except OSError:
-                print(f"[wuwa] failed to remove duplicate file: {path}")
+        except OSError:
+            print(f"[wuwa] failed to remove duplicate file: {path}")
 
 
 def process_url_to_data(output_dir: str = 'data', url: Optional[str] = None, profilename: Optional[str] = None) -> Optional[str]:
