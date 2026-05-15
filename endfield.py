@@ -1,14 +1,18 @@
 ﻿import argparse
 import json
+import logging
 import os
 import re
 import shutil
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_URL = "https://ef-webview.gryphline.com/page/gacha_char?server_id=2&platform=Windows&channel=6&subChannel=6&lang=ko-kr&server=2"
 DEFAULT_OUTPUT = "gacha_char_data.json"
@@ -159,30 +163,39 @@ def get_default_data_path() -> Path:
     )
 
 
+FILE_WRITE_LOCK = threading.Lock()
+
+
+def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_suffix(path.suffix + '.tmp')
+    temp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+    temp_path.replace(path)
+
+
 def remove_duplicate_endfield_files(output_dir: str, token: str, keep_filename: str) -> None:
     path = Path(output_dir)
     if not path.exists() or not path.is_dir():
         return
 
-    for json_file in path.glob('endfield_*.json'):
-        if json_file.name == keep_filename:
-            continue
+    with FILE_WRITE_LOCK:
+        for json_file in path.glob('endfield_*.json'):
+            if json_file.name == keep_filename:
+                continue
 
-        try:
-            data = json.loads(json_file.read_text(encoding='utf-8'))
-        except Exception:
-            continue
-
-        existing_id = data.get('id')
-        existing_token = data.get('token')
-        if any(str(value) == str(token) for value in (existing_id, existing_token) if value is not None):
             try:
-                json_file.unlink()
-                print(f"[endfield] removed duplicate file: {json_file}")
-            except OSError:
-                print(f"[endfield] failed to remove duplicate file: {json_file}")
+                data = json.loads(json_file.read_text(encoding='utf-8'))
+            except Exception:
+                continue
 
-
+            existing_id = data.get('id')
+            existing_token = data.get('token')
+            if any(str(value) == str(token) for value in (existing_id, existing_token) if value is not None):
+                try:
+                    json_file.unlink()
+                    logger.info("[endfield] removed duplicate file: %s", json_file)
+                except OSError:
+                    logger.warning("[endfield] failed to remove duplicate file: %s", json_file)
 def build_request(url: str, token: str, pool_type: Optional[str] = None) -> tuple[str, dict[str, str]]:
     parsed = urlparse(url)
     if parsed.path.startswith("/api/record/char") or parsed.path.startswith("/api/record/char/pool"):
@@ -347,7 +360,8 @@ def fetch_endfield_data(profilename: str) -> str:
 
     remove_duplicate_endfield_files(str(output_path.parent), token, output_path.name)
 
-    output_path.write_text(json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    with FILE_WRITE_LOCK:
+        write_json_atomic(output_path, output_data)
     return str(output_path)
 
 
@@ -356,11 +370,15 @@ def main() -> int:
     parser.add_argument("profilename", help="Profile name to save file as endfield_<profilename>.json")
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+    )
     try:
         fetch_endfield_data(profilename=args.profilename)
         return 0
     except Exception as exc:
-        print(f"Error: {exc}")
+        logger.exception("Error fetching endfield data")
         return 1
 
 

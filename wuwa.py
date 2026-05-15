@@ -1,8 +1,10 @@
 import json
+import logging
 import os
 import re
 import requests
 import string
+import threading
 import time
 import traceback
 from datetime import datetime
@@ -51,6 +53,8 @@ UNINSTALL_REGISTRY_PATHS = [
 
 if os.name == "nt":
     import winreg
+
+logger = logging.getLogger(__name__)
 
 
 def all_drives() -> Iterator[Path]:
@@ -317,8 +321,8 @@ def fetch_data_with_post(url: str) -> dict:
     }
 
     all_records = {pool_names[i]: [] for i in range(1, 10)}
-    print("[wuwa] fetch_data_with_post url:", url)
-    print("[wuwa] query params:", params)
+    logger.debug("[wuwa] fetch_data_with_post url: %s", url)
+    logger.debug("[wuwa] query params: %s", params)
     for card_pool_type in range(1, 10):
         post_body = {
             "playerId": params.get('player_id', ''),
@@ -329,32 +333,40 @@ def fetch_data_with_post(url: str) -> dict:
             "recordId": params.get('record_id', ''),
         }
         pool_name = pool_names.get(card_pool_type, f"타입{card_pool_type}")
-        print(f"[wuwa] POST cardPoolType={card_pool_type} ({pool_name}) body={post_body}")
+        logger.debug("[wuwa] POST cardPoolType=%s (%s) body=%s", card_pool_type, pool_name, post_body)
 
         try:
             response = requests.post(post_url, json=post_body, headers=headers, timeout=10)
-            print(f"[wuwa] response status={response.status_code}")
+            logger.debug("[wuwa] response status=%s", response.status_code)
             response.raise_for_status()
             data = response.json()
-            print(f"[wuwa] response data code={data.get('code')} message={data.get('message')}")
+            logger.debug("[wuwa] response data code=%s message=%s", data.get('code'), data.get('message'))
             if data.get('code') == 0 and 'data' in data:
                 records = data['data']
                 if records:
-                    print(f"[wuwa] {pool_name} records={len(records)}")
                     for record in records:
                         record.pop('cardPoolType', None)
-                    all_records[pool_name].extend(records)
+                    logger.info("[wuwa] %s records=%s", pool_name, len(records))
                 else:
-                    print(f"[wuwa] {pool_name} no records")
+                    logger.warning("[wuwa] %s no records", pool_name)
             else:
-                print(f"[wuwa] {pool_name} invalid response: {data}")
-        except Exception as exc:
-            print(f"[wuwa] error for cardPoolType={card_pool_type} ({pool_name}): {exc}")
-            traceback.print_exc()
+                logger.warning("[wuwa] %s invalid response: %s", pool_name, data)
+        except Exception:
+            logger.exception("[wuwa] error for cardPoolType=%s (%s)", card_pool_type, pool_name)
 
     total_records = sum(len(lst) for lst in all_records.values())
-    print(f"[wuwa] total records collected={total_records}")
+    logger.info("[wuwa] total records collected=%s", total_records)
     return all_records
+
+
+FILE_WRITE_LOCK = threading.Lock()
+
+
+def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_suffix(path.suffix + '.tmp')
+    temp_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+    temp_path.replace(path)
 
 
 def save_records_to_json(records: dict, filename: Optional[str] = None, metadata: Optional[dict] = None) -> Optional[str]:
@@ -370,16 +382,16 @@ def save_records_to_json(records: dict, filename: Optional[str] = None, metadata
     elif not filename.lower().endswith('.json'):
         filename = f'{filename}.json'
 
-    os.makedirs(Path(filename).parent or Path('.'), exist_ok=True)
+    output_path = Path(filename)
     data_to_save = {
         **metadata,
         'records': records,
     }
 
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data_to_save, f, ensure_ascii=False, indent=2)
+    with FILE_WRITE_LOCK:
+        write_json_atomic(output_path, data_to_save)
 
-    return filename
+    return str(output_path)
 
 
 def parse_wuwa_timestamp(value: Any) -> Optional[int]:
@@ -457,22 +469,23 @@ def remove_duplicate_wuwa_files(output_dir: str, identifier: str, keep_filename:
     if not output_path.exists() or not output_path.is_dir():
         return
 
-    for path in output_path.glob('wuwa_*.json'):
-        if path.name == keep_filename:
-            continue
-        try:
-            with path.open('r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            continue
+    with FILE_WRITE_LOCK:
+        for path in output_path.glob('wuwa_*.json'):
+            if path.name == keep_filename:
+                continue
+            try:
+                with path.open('r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except Exception:
+                continue
 
-        try:
-            existing_id = data.get('id')
-            if existing_id is not None and str(existing_id) == str(identifier):
-                path.unlink()
-                print(f"[wuwa] removed duplicate file: {path}")
-        except OSError:
-            print(f"[wuwa] failed to remove duplicate file: {path}")
+            try:
+                existing_id = data.get('id')
+                if existing_id is not None and str(existing_id) == str(identifier):
+                    path.unlink()
+                    logger.info("[wuwa] removed duplicate file: %s", path)
+            except OSError:
+                logger.warning("[wuwa] failed to remove duplicate file: %s", path)
 
 
 def process_url_to_data(output_dir: str = 'data', url: Optional[str] = None, profilename: Optional[str] = None) -> Optional[str]:
@@ -481,22 +494,23 @@ def process_url_to_data(output_dir: str = 'data', url: Optional[str] = None, pro
     if profilename is None:
         raise ValueError("profilename이 지정되어야 합니다.")
 
-    os.makedirs(output_dir, exist_ok=True)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
     records = fetch_data_with_post(url)
     if not records or not any(len(lst) for lst in records.values()):
-        print("[wuwa] no records were returned from fetch_data_with_post")
+        logger.warning("[wuwa] no records were returned from fetch_data_with_post")
         return None
 
     params = extract_query_params(url)
     player_id = params.get('player_id', 'unknown')
-    output_file = os.path.join(output_dir, f'wuwa_{profilename}.json')
+    output_file = output_path / f'wuwa_{profilename}.json'
 
     output_data = build_wuwa_schema(records, player_id)
-    remove_duplicate_wuwa_files(output_dir, output_data['id'], Path(output_file).name)
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(output_data, f, ensure_ascii=False, indent=2)
+    remove_duplicate_wuwa_files(str(output_path), output_data['id'], output_file.name)
+    with FILE_WRITE_LOCK:
+        write_json_atomic(output_file, output_data)
 
-    print(f"[wuwa] saved JSON file: {output_file}")
-    return output_file
+    logger.info("[wuwa] saved JSON file: %s", output_file)
+    return str(output_file)
 
 
