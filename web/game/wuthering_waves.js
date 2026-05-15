@@ -245,232 +245,28 @@ const renderStats = rows => {
   statCards[3].textContent = fourStars;
 };
 
-const loadFileData = filename => {
-  if (!filename) return;
-
-  state.selectedFile = filename;
-  const input = getEl(selectors.profileNameInput);
-  if (input) input.value = filename;
-
-  fetch(`/data/${encodeURIComponent(filename)}`)
-    .then(response => {
-      if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
-      return response.text();
-    })
-    .then(text => {
-      const extension = filename.split('.').pop().toLowerCase();
-      if (extension !== 'json') {
-        throw new Error('지원되지 않는 파일 형식입니다. JSON 파일을 선택해주세요.');
-      }
-      const json = JSON.parse(text);
-      const canonicalFilename = getCanonicalWuwaFilename(filename, json);
-      if (canonicalFilename !== filename) {
-        state.selectedFile = canonicalFilename;
-        const profileInput = getEl(selectors.profileNameInput);
-        if (profileInput) profileInput.value = canonicalFilename;
-        const dropdownLabel = getEl(selectors.fileDropdownLabel);
-        if (dropdownLabel) dropdownLabel.textContent = canonicalFilename;
-      }
-      state.allRows = parseJsonRows(json);
-      const jsonSideRailItems = getJsonSideRailItems(json);
-      if (jsonSideRailItems) {
-        populateSideRailItems(jsonSideRailItems);
-        state.selectedBanner = jsonSideRailItems[0].banner;
-        state.selectedPoolType = jsonSideRailItems[0].poolType;
-      }
-      attachSideRailHandlers();
-      refreshSideRailPity();
-      updateBannerSelection(state.selectedBanner, state.selectedPoolType);
-    })
-    .catch(error => {
-      console.error(error);
-      alert(error.message);
-    });
-};
-
-const populateFileList = files => {
-  const dropdown = getEl(selectors.fileDropdown);
-  const dropdownLabel = getEl(selectors.fileDropdownLabel);
-  const status = getEl(selectors.fileListStatus);
-  if (!dropdown || !dropdownLabel) return;
-
-  state.files = files;
-  dropdown.innerHTML = files.length
-    ? files.map(filename => `
-        <div class="dropdown-item" role="option" data-filename="${filename}">${filename}</div>
-      `).join('')
-    : '<div class="dropdown-empty">일치하는 JSON 파일이 없습니다.</div>';
-
-  if (files.length > 0) {
-    state.selectedFile = state.selectedFile || files[0];
-    dropdownLabel.textContent = state.selectedFile;
-    highlightSelectedFileItem();
-  } else {
-    dropdownLabel.textContent = '로드할 파일을 선택하세요.';
+const handleCommonFileLoaded = (rows, sideRailItems) => {
+  state.allRows = rows;
+  if (sideRailItems && sideRailItems.length > 0) {
+    populateSideRailItems(sideRailItems);
+    state.selectedBanner = sideRailItems[0].banner;
+    state.selectedPoolType = sideRailItems[0].poolType;
   }
-
-  if (status) {
-    status.textContent = files.length
-      ? `발견된 JSON 파일 ${files.length}개`
-      : '일치하는 JSON 파일이 없습니다.';
-  }
+  attachSideRailHandlers();
+  refreshSideRailPity();
+  updateBannerSelection(state.selectedBanner, state.selectedPoolType);
 };
 
-const highlightSelectedFileItem = () => {
-  const items = document.querySelectorAll('.dropdown-item');
-  items.forEach(item => {
-    item.classList.toggle('active', item.dataset.filename === state.selectedFile);
-  });
+const gameConfig = {
+  gameName: 'wuwa',
+  dataListQuery: 'wuwa',
+  profilePlaceholder: '예: wuwa_example.json',
+  state,
+  selectors,
+  parseJsonRows,
+  getJsonSideRailItems,
+  canonicalizeFilename: getCanonicalWuwaFilename,
+  onFileLoaded: handleCommonFileLoaded
 };
 
-const toggleFileDropdown = () => {
-  const dropdown = getEl(selectors.fileDropdown);
-  const toggle = getEl(selectors.fileDropdownToggle);
-  if (!dropdown || !toggle) return;
-
-  const isOpen = !dropdown.classList.contains('hidden');
-  if (isOpen) {
-    closeFileDropdown();
-    return;
-  }
-
-  const status = getEl(selectors.fileListStatus);
-  if (status) {
-    status.textContent = '`data/` 폴더의 JSON 파일을 새로 불러오는 중...';
-  }
-
-  loadFileList(false);
-  dropdown.classList.remove('hidden');
-  toggle.setAttribute('aria-expanded', 'true');
-};
-
-const closeFileDropdown = () => {
-  const dropdown = getEl(selectors.fileDropdown);
-  const toggle = getEl(selectors.fileDropdownToggle);
-  if (!dropdown || !toggle) return;
-
-  dropdown.classList.add('hidden');
-  toggle.setAttribute('aria-expanded', 'false');
-};
-
-const handleFileDropdownClick = event => {
-  const item = event.target.closest('.dropdown-item');
-  if (!item) return;
-
-  state.selectedFile = item.dataset.filename;
-  const input = getEl(selectors.profileNameInput);
-  if (input) input.value = state.selectedFile;
-  getEl(selectors.fileDropdownLabel).textContent = state.selectedFile;
-  highlightSelectedFileItem();
-  closeFileDropdown();
-};
-
-const loadFileList = (autoLoad = true) => {
-  fetch('/data/list?game=wuwa')
-    .then(response => response.json())
-    .then(files => {
-      populateFileList(files);
-      if (autoLoad && files.length > 0) {
-        loadFileData(state.selectedFile);
-      }
-    })
-    .catch(error => {
-      console.error('JSON 파일 목록을 불러오는 중 오류가 발생했습니다.', error);
-    });
-};
-
-const handleDocumentClick = event => {
-  const dropdown = getEl(selectors.fileDropdown);
-  const toggle = getEl(selectors.fileDropdownToggle);
-  if (!dropdown || !toggle) return;
-
-  if (!toggle.contains(event.target) && !dropdown.contains(event.target)) {
-    closeFileDropdown();
-  }
-};
-
-const handleLoadFileButton = () => {
-  if (!state.selectedFile) {
-    alert('먼저 파일을 선택해주세요.');
-    return;
-  }
-
-  loadFileData(state.selectedFile);
-};
-
-function handleUpdateInfo() {
-  const button = getEl(selectors.updateInfoButton);
-  const status = getEl(selectors.updateInfoStatus);
-  const profileNameInput = getEl(selectors.profileNameInput);
-
-  if (!button || !status) return;
-  if (profileNameInput && profileNameInput.value.trim()) {
-    state.selectedFile = profileNameInput.value.trim();
-  }
-  if (!state.selectedFile) {
-    alert('먼저 프로필 파일을 선택하거나 입력해주세요.');
-    return;
-  }
-
-  button.disabled = true;
-  status.textContent = '정보 업데이트 중입니다...';
-
-  fetch('/exporter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      game_name: 'wuwa',
-      profilename: state.selectedFile
-    })
-  })
-    .then(response => response.json().then(data => ({ status: response.status, data })))
-    .then(({ status, data }) => {
-      if (status !== 200) {
-        throw new Error(data.error || '업데이트에 실패했습니다.');
-      }
-      status.textContent = '정보 업데이트가 완료되었습니다.';
-      alert('정보 업데이트/생성이 완료되었습니다.');
-      console.log('exporter response:', data);
-    })
-    .catch(error => {
-      status.textContent = `오류: ${error.message}`;
-      alert(error.message);
-    })
-    .finally(() => {
-      button.disabled = false;
-    });
-};
-
-const openSettingsModal = () => {
-  getEl('#settings-modal').classList.add('show');
-};
-
-const closeSettingsModal = () => {
-  getEl('#settings-modal').classList.remove('show');
-};
-
-const profileNameInput = getEl(selectors.profileNameInput);
-const fileToggle = getEl(selectors.fileDropdownToggle);
-const fileDropdown = getEl(selectors.fileDropdown);
-const loadFileButton = getEl(selectors.loadFileButton);
-const status = getEl(selectors.fileListStatus);
-
-const updateInfoButton = getEl(selectors.updateInfoButton);
-const updateInfoStatus = getEl(selectors.updateInfoStatus);
-
-if (profileNameInput) {
-  profileNameInput.addEventListener('input', event => {
-    state.selectedFile = event.target.value.trim();
-  });
-}
-if (fileToggle) fileToggle.addEventListener('click', toggleFileDropdown);
-if (fileDropdown) fileDropdown.addEventListener('click', handleFileDropdownClick);
-if (loadFileButton) loadFileButton.addEventListener('click', handleLoadFileButton);
-if (updateInfoButton) {
-  updateInfoButton.addEventListener('click', handleUpdateInfo);
-}
-document.addEventListener('click', handleDocumentClick);
-
-if (status) status.textContent = '`data/` 폴더의 JSON 파일을 찾는 중...';
-if (updateInfoStatus) updateInfoStatus.textContent = '프로필 선택 후 정보를 업데이트하거나 생성합니다.';
-loadFileList(true);
+initCommonTracker(gameConfig);

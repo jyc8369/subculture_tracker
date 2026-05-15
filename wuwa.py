@@ -7,7 +7,7 @@ import time
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Optional, Tuple
 from urllib.parse import urlparse
 
 PATTERN = re.compile(
@@ -385,7 +385,77 @@ def save_records_to_json(records: dict, filename: Optional[str] = None, metadata
     return filename
 
 
-def remove_duplicate_wuwa_files(output_dir: str, player_id: str, keep_filename: str) -> None:
+def parse_wuwa_timestamp(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+
+    if isinstance(value, (int, float)):
+        return int(value)
+
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return None
+
+        try:
+            return int(value)
+        except ValueError:
+            pass
+
+        try:
+            return int(float(value))
+        except ValueError:
+            pass
+
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y/%m/%d %H:%M:%S'):
+            try:
+                return int(datetime.strptime(value, fmt).timestamp() * 1000)
+            except ValueError:
+                continue
+
+    return None
+
+
+def normalize_wuwa_record(record: dict) -> dict[str, Any]:
+    resource_type = record.get('resourceType')
+    if isinstance(resource_type, str):
+        normalized_type = resource_type.strip().lower()
+    else:
+        normalized_type = ''
+
+    if normalized_type == '무기':
+        item_type = 2
+    elif normalized_type == '공명자':
+        item_type = 1
+    else:
+        item_type = 1
+
+    return {
+        'type': item_type,
+        'seqId': str(record.get('resourceId')) if record.get('resourceId') is not None else None,
+        'name': record.get('name'),
+        'rarity': str(record.get('qualityLevel')) if record.get('qualityLevel') is not None else None,
+        'timestamp': parse_wuwa_timestamp(record.get('time')),
+    }
+
+
+def build_wuwa_schema(records: dict, player_id: str) -> dict[str, Any]:
+    banners = []
+    for banner_name, items in records.items():
+        banner_items = [normalize_wuwa_record(item) for item in items]
+        if banner_items:
+            banners.append({
+                'bannerName': banner_name,
+                'items': banner_items,
+            })
+
+    return {
+        'id': player_id,
+        'banners': banners,
+    }
+
+
+def remove_duplicate_wuwa_files(output_dir: str, identifier: str, keep_filename: str) -> None:
     output_path = Path(output_dir)
     if not output_path.exists() or not output_path.is_dir():
         return
@@ -399,7 +469,7 @@ def remove_duplicate_wuwa_files(output_dir: str, player_id: str, keep_filename: 
         except Exception:
             continue
 
-        if data.get('player_id') == player_id:
+        if data.get('id') == identifier:
             try:
                 path.unlink()
                 print(f"[wuwa] removed duplicate file: {path}")
@@ -423,14 +493,12 @@ def process_url_to_data(output_dir: str = 'data', url: Optional[str] = None, pro
     player_id = params.get('player_id', 'unknown')
     output_file = os.path.join(output_dir, f'wuwa_{profilename}.json')
 
-    remove_duplicate_wuwa_files(output_dir, player_id, Path(output_file).name)
+    output_data = build_wuwa_schema(records, player_id)
+    remove_duplicate_wuwa_files(output_dir, output_data['id'], Path(output_file).name)
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(output_data, f, ensure_ascii=False, indent=2)
 
-    metadata = {
-        'player_id': player_id,
-        'source_url': url,
-    }
-    saved_file = save_records_to_json(records, output_file, metadata=metadata)
-    print(f"[wuwa] saved JSON file: {saved_file}")
-    return saved_file
+    print(f"[wuwa] saved JSON file: {output_file}")
+    return output_file
 
 

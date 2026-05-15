@@ -48,28 +48,65 @@ def parse_page_url(url: str) -> dict[str, str]:
     return params
 
 
+def _read_file_bytes_with_windows_sharing(data_path: Path) -> bytes:
+    if os.name != "nt":
+        return data_path.read_bytes()
+
+    import msvcrt
+    import ctypes
+    from ctypes import wintypes
+
+    GENERIC_READ = 0x80000000
+    FILE_SHARE_READ = 0x00000001
+    FILE_SHARE_WRITE = 0x00000002
+    FILE_SHARE_DELETE = 0x00000004
+    OPEN_EXISTING = 3
+    FILE_ATTRIBUTE_NORMAL = 0x80
+    INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+
+    CreateFileW = ctypes.windll.kernel32.CreateFileW
+    CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    CreateFileW.restype = wintypes.HANDLE
+
+    handle = CreateFileW(
+        str(data_path),
+        GENERIC_READ,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        None,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        None,
+    )
+
+    if handle == INVALID_HANDLE_VALUE:
+        error_code = ctypes.GetLastError()
+        raise OSError(error_code, f"Could not open file with shared read access: {data_path}")
+
+    try:
+        fd = msvcrt.open_osfhandle(handle, os.O_RDONLY)
+    except OSError:
+        ctypes.windll.kernel32.CloseHandle(handle)
+        raise
+
+    with os.fdopen(fd, "rb") as f:
+        return f.read()
+
+
 def extract_token_from_data_file(data_path: Path) -> Optional[str]:
     if not data_path.exists():
         return None
+    if not data_path.is_file():
+        return None
 
-    temp_dir = tempfile.mkdtemp(prefix="get_gacha_url_")
-    temp_path = temp_dir and Path(temp_dir) / f"{data_path.name}.copy"
     try:
-        shutil.copy2(data_path, temp_path)
-        raw_bytes = temp_path.read_bytes()
-        content = raw_bytes.decode("utf-8", errors="replace")
-        return find_latest_token(content)
-    finally:
-        try:
-            if temp_path and temp_path.exists():
-                temp_path.unlink()
-        except Exception:
-            pass
-        try:
-            if temp_dir and os.path.isdir(temp_dir):
-                os.rmdir(temp_dir)
-        except Exception:
-            pass
+        raw_bytes = _read_file_bytes_with_windows_sharing(data_path)
+    except PermissionError as exc:
+        raise RuntimeError(f"Cannot read data file due to permission error: {data_path}") from exc
+    except OSError as exc:
+        raise RuntimeError(f"Cannot read data file: {data_path}") from exc
+
+    content = raw_bytes.decode("utf-8", errors="replace")
+    return find_latest_token(content)
 
 
 def find_latest_token(content: str) -> Optional[str]:
@@ -122,6 +159,28 @@ def get_default_data_path() -> Path:
     )
 
 
+def remove_duplicate_endfield_files(output_dir: str, token: str, keep_filename: str) -> None:
+    path = Path(output_dir)
+    if not path.exists() or not path.is_dir():
+        return
+
+    for json_file in path.glob('endfield_*.json'):
+        if json_file.name == keep_filename:
+            continue
+
+        try:
+            data = json.loads(json_file.read_text(encoding='utf-8'))
+        except Exception:
+            continue
+
+        if data.get('token') == token:
+            try:
+                json_file.unlink()
+                print(f"[endfield] removed duplicate token file: {json_file}")
+            except OSError:
+                print(f"[endfield] failed to remove duplicate token file: {json_file}")
+
+
 def build_request(url: str, token: str, pool_type: Optional[str] = None) -> tuple[str, dict[str, str]]:
     parsed = urlparse(url)
     if parsed.path.startswith("/api/record/char") or parsed.path.startswith("/api/record/char/pool"):
@@ -166,7 +225,7 @@ def normalize_item(item: dict[str, Any], pool_type: Optional[str] = None) -> dic
         "poolName": item.get("poolName"),
         "charName": item.get("charName"),
         "rarity": item.get("rarity"),
-        "time": time_value,
+        "timestamp": time_value,
         "seqId": item.get("seqId"),
     }
 
@@ -260,21 +319,32 @@ def fetch_endfield_data(profilename: str) -> str:
                 }
                 grouped.append(groups[key])
             groups[key]["records"].append({
-                "charName": record.get("charName"),
-                "rarity": record.get("rarity"),
-                "time": record.get("time"),
+                "type": 1,
                 "seqId": record.get("seqId"),
+                "name": record.get("charName"),
+                "rarity": str(record.get("rarity")) if record.get("rarity") is not None else None,
+                "timestamp": record.get("timestamp"),
             })
 
-    output_data = {
-        "response": {
-            "records": grouped,
+    banners = [
+        {
+            "bannerName": group["poolName"],
+            "items": group["records"],
         }
+        for group in grouped
+    ]
+
+    output_data = {
+        "id": token,
+        "banners": banners,
     }
 
     output_path = Path("data") / f"endfield_{profilename}.json"
     output_path = output_path.resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    remove_duplicate_endfield_files(str(output_path.parent), token, output_path.name)
+
     output_path.write_text(json.dumps(output_data, ensure_ascii=False, indent=2), encoding="utf-8")
     return str(output_path)
 
