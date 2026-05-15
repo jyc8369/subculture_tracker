@@ -10,39 +10,11 @@ import queue
 import uuid
 from pathlib import Path
 
-import webview
 from flask import Flask, render_template, send_from_directory, request, jsonify
 
-import endfield
-import wuwa
-
-
-# ------------------------------------------------------------------
-# 관리자 권한 자동 실행 (Windows 전용)
-# ------------------------------------------------------------------
-if os.name == 'nt':
-    import ctypes
-
-    def is_admin():
-        try:
-            return ctypes.windll.shell32.IsUserAnAdmin()
-        except Exception:
-            return False
-
-    def run_as_admin():
-        script = os.path.abspath(sys.argv[0])
-        params = ' '.join([f'"{arg}"' for arg in sys.argv[1:]])
-        try:
-            ctypes.windll.shell32.ShellExecuteW(
-                None, 'runas', sys.executable, f'"{script}" {params}', None, 1
-            )
-            sys.exit(0)
-        except Exception:
-            return False
-
-    if not is_admin():
-        if not run_as_admin():
-            raise RuntimeError('관리자 권한으로 실행할 수 없습니다.')
+import backend.endfield as endfield
+import backend.webview as webview
+import backend.wuwa as wuwa
 
 
 # ------------------------------------------------------------------
@@ -52,11 +24,11 @@ if getattr(sys, 'frozen', False):
     BUNDLE_DIR = Path(sys._MEIPASS)
     PROJECT_ROOT = Path(sys.argv[0]).resolve().parent
 else:
-    BUNDLE_DIR = Path(__file__).resolve().parent
-    PROJECT_ROOT = BUNDLE_DIR
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    BUNDLE_DIR = PROJECT_ROOT
 
-TEMPLATE_FOLDER = BUNDLE_DIR / 'web'
-STATIC_FOLDER = BUNDLE_DIR / 'web'
+TEMPLATE_FOLDER = PROJECT_ROOT / 'web'
+STATIC_FOLDER = PROJECT_ROOT / 'web'
 DATA_DIR = PROJECT_ROOT / 'data'
 SETTINGS_FILE = DATA_DIR / 'web-setting.json'
 
@@ -68,10 +40,6 @@ app = Flask(
     static_folder=str(STATIC_FOLDER),
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
-)
 logger = logging.getLogger(__name__)
 
 
@@ -264,27 +232,22 @@ def exporter_status(job_id):
     return jsonify(job)
 
 
-# ------------------------------------------------------------------
-# 애플리케이션 진입점
-# ------------------------------------------------------------------
-if __name__ == '__main__':
+def run() -> None:
     port = find_free_port()
     url = f'http://127.0.0.1:{port}/'
 
-    def run_flask():
+    def run_flask() -> None:
         logger.info('[app] starting Flask server on %s', url)
         app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False, threaded=True)
 
     server_thread = threading.Thread(target=run_flask, daemon=True)
     server_thread.start()
 
-    logger.info('[app] creating GUI window for %s', url)
-    webview.create_window(
-        'Subculture Tracker',
-        url,
-        width=1200,
-        height=800,
-        resizable=False,
-    )
-    logger.info('[app] starting GUI event loop')
-    webview.start()
+    webview.create_and_start_window(url)
+
+
+# ------------------------------------------------------------------
+# 애플리케이션 진입점
+# ------------------------------------------------------------------
+if __name__ == '__main__':
+    run()
