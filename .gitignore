@@ -9,4 +9,4 @@
 *.pyd
 *.log
 *.tmp
-
+*.log

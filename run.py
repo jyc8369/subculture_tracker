@@ -42,8 +42,11 @@ if __name__ == '__main__':
                 subprocess.Popen([pythonw, __file__], env=env, close_fds=True)
                 sys.exit(0)
 
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    log_path = os.path.join(project_root, 'subculture_tracker.log')
+    if getattr(sys, 'frozen', False):
+        project_root = os.path.dirname(sys.executable)
+    else:
+        project_root = os.path.dirname(os.path.abspath(__file__))
+    log_path = os.path.join(project_root, 'lastlog.log')
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 

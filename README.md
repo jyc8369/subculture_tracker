@@ -1,26 +1,33 @@
 # Subculture Tracker
 
-가챠 기록 데이터 수집 및 시각화를 위한 도구입니다. 주로 Wuthering Waves와 Arknights Endfield의 가챠 데이터를 추출하여 JSON 파일로 저장하고, 웹 인터페이스에서 확인할 수 있습니다.
+Subculture Tracker는 Wuthering Waves와 Arknights Endfield의 가챠 기록을 자동으로 모아주는 데스크톱 도구입니다. 사용자는 별도의 수동 파싱 없이 가챠 결과를 쉽게 수집하고, 저장된 데이터를 한눈에 확인할 수 있습니다.
 
-## 기능
+## 프로그램 소개
 
-- **Wuthering Waves 데이터 수집** (`wuwa.py`)
-  - 로그에서 WWA 가챠 기록 URL 추출
-  - 외부 API에서 가챠 기록을 가져와 JSON으로 변환
-- **Endfield 데이터 수집** (`endfield.py`)
-  - Endfield 웹뷰 JSON API 호출
-  - 뱃지/아이템 데이터를 정리하여 JSON 파일로 저장
-- **웹 대시보드** (`app.py`, `web/`)
-  - Flask 기반 UI 제공
-  - 저장된 JSON 데이터를 목록화하고 선택하여 로드
-  - 웹에서 결과를 확인할 수 있는 SPA 형태 구성
+- Wuthering Waves와 Endfield 두 게임의 가챠 기록을 지원
+- 자동으로 원본 데이터를 추출하고, 공통 JSON 형식으로 저장
+- 웹 기반 인터페이스를 데스크톱 창에서 바로 실행
+- 브라우저 없이 간편하게 기록을 불러오고 관리
 
-## 요구사항
+## 주요 기능
 
-- Python 3.7+
-- `requirements.txt`에 정의된 패키지
+- **자동 수집**: 로그와 API를 통해 가챠 데이터를 자동으로 가져옵니다.
+- **통합 저장**: 모든 결과를 `data/` 폴더에 JSON으로 정리합니다.
+- **GUI 조회**: 내장 웹뷰로 결과를 편리하게 확인합니다.
+- **포터블 실행**: 배포용 exe로 실행 시 별도 설치 없이 바로 사용 가능합니다.
+- **로그 기록**: `subculture_tracker.log`에 실행 기록을 남깁니다.
 
-### 설치
+## 사용 방법
+
+1. `run.py`를 실행합니다.
+2. 자동으로 열리는 GUI 창에서 원하는 데이터를 선택합니다.
+3. 결과가 `data/` 폴더에 `wuwa_*.json` 또는 `endfield_*.json` 형태로 저장됩니다.
+4. 저장된 JSON 파일을 다른 도구로 추가 분석할 수 있습니다.
+
+## 설치
+
+Python 환경에서 직접 실행하려면 아래 명령을 실행하세요.
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -28,115 +35,38 @@ pip install -r requirements.txt
 ## 실행
 
 ```bash
-python app.py
+python run.py
 ```
 
-웹 브라우저에서 `http://127.0.0.1:5000`에 접속합니다.
+또는 배포용 실행파일이 있는 경우:
 
-## 사용법
+```bash
+dist/app/app.exe
+```
 
-1. `app.py`를 실행합니다.
-2. 웹 UI를 통해 데이터를 내보내거나 저장된 JSON 파일을 선택합니다.
-3. `data/` 폴더에 생성된 `wuwa_*.json` 또는 `endfield_*.json` 파일을 확인합니다.
+## 저장 폴더
 
-## 루트 파일 설명
+- `data/`: 수집된 JSON 파일 저장 위치
+- `subculture_tracker.log`: 프로그램 실행 로그 저장 파일
 
-- `app.py`: Flask 웹 서버 및 라우트 정의
-- `endfield.py`: Endfield 가챠 기록 추출 및 JSON 파일 저장 로직
-- `wuwa.py`: Wuthering Waves 가챠 URL 검사 및 데이터 추출 로직
-- `requirements.txt`: 필요한 Python 패키지 목록
-- `README.md`: 이 문서
-- `ex_json.md`: 공통 JSON 스키마 및 필드 설명
-- `test.html`: 테스트 목적의 HTML 파일
-- `.gitignore`: Git 무시 설정
+## 저장된 결과 형식
 
-## 폴더 설명
+모든 수집 결과는 아래와 같은 공통 구조를 따릅니다.
 
-- `data/`
-  - 웹 설정 파일 및 수집된 JSON 데이터 저장 위치
-  - 예: `wuwa_*.json`, `endfield_*.json`, `web-setting.json`
-- `web/`
-  - HTML, CSS, JavaScript 정적 리소스
-  - `web/game/` 아래에 게임별 트래커 페이지가 있음
-- `alpha_dev/`
-  - 추가 개발 관련 파일 및 보조 자료
-- `.venv/`
-  - 로컬 Python 가상환경 (생성된 경우)
+- `id`: 기록을 구분하는 고유값
+- `banners`: 뽑기 단위 그룹 목록
+  - `bannerName`: 뽑기 이름
+  - `items`: 획득 항목 목록
+- `items` 항목
+  - `type`: 항목 종류
+  - `seqId`: 항목 고유 ID
+  - `name`: 항목 이름
+  - `rarity`: 희귀도
+  - `timestamp`: 밀리초 단위 Unix timestamp
 
 ## 참고
 
-- 실제 코드 구조에 따라, `parser.py`와 `data_exporter.py` 파일은 현재 루트에 존재하지 않습니다.
-- `app.py`는 Flask 앱을 실행하고 `/exporter` 엔드포인트로 `wuwa`와 `endfield` 데이터를 처리합니다.
-- `ex_json.md`는 프로젝트에서 통용되는 JSON 필드 규칙을 설명합니다.
-
-# 이 프로젝트에서 공통적으로 사용하는 Json 양식
-
-이 문서는 프로젝트에서 사용하는 기본 JSON 스키마를 설명합니다. 실제 데이터는 다음과 같은 형태로 구성됩니다.
-
-- `id`: 데이터를 식별하는 고유값. 예를 들어 플레이어 ID, 토큰, 혹은 사용자 식별자.
-- `banners`: 뱃지 또는 뽑기 그룹 목록.
-  - 각 `banner` 객체는 `bannerName`과 `items`를 포함.
-- `items`: 해당 뱃지에서 획득한 아이템 목록.
-
-아래 예시는 실제 구조를 문서화한 것이며, 내부 JSON 값은 그대로 참고하십시오.
-
-```json
-{
-  "id": "12345678",
-  "banners": [
-    {
-      "bannerName": "이벤트 임시 뽑기",
-      "items": [
-        {
-          "type": 1
-          "seqId": "499",
-          "name": "에스텔라",
-          "rarity": "5",
-          "timestamp": 1778374719795
-        },
-        {
-          "type" : 1 
-          "seqId": "498",
-          "name": "플루라이트",
-          "rarity": "4",
-          "timestamp": 1778374700000
-        }
-      ]
-    },
-    {
-      "bannerName": "상시 뽑기",
-      "items": [
-        {
-          "type": 1
-          "seqId": "373",
-          "name": "아케쿠리",
-          "rarity": "5",
-          "timestamp": 1778300000000
-        }
-      ]
-    }
-  ]
-}
-```
-
-## 필드 설명
-- `id`: 게임의 UID 또는 Player_ID 또는 Token
-- `banners`: 뽑기 단위 그룹 배열.
-  - `bannerName`: 해당 뽑기의 이름.
-  - `items`: 뽑기에서 획득한 항목 목록.
-- `type`: 항목 종류.
-  - `1`: 캐릭터
-  - `2`: 무기
-  - `3`: 방어구
-  - `4`: 기타
-- `seqId`: 항목 고유 ID. 문자열로 저장.
-- `name`: 항목 이름.
-- `rarity`: 희귀도. 문자열 형태로 저장.
-- `timestamp`: Unix timestamp, 밀리초 단위.
-
-## 추가 참고
-- `items` 배열은 0개 이상일 수 있음.
-- `banners` 배열도 0개 이상일 수 있음.
-- `name`이나 `rarity`는 상황에 따라 null 또는 빈 문자열이 될 수 있음.
-- `timestamp`는 밀리초 단위로 변환하여 저장해야 함.
+- `data/` 폴더는 실행 중 생성된 데이터 저장용이며, 배포 시에도 폴더 구조가 유지됩니다.
+- `run.py`가 실행 진입점입니다.
+- `README.md`는 사용자용 안내 문서입니다.
 </content>

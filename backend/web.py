@@ -27,8 +27,8 @@ else:
     PROJECT_ROOT = Path(__file__).resolve().parent.parent
     BUNDLE_DIR = PROJECT_ROOT
 
-TEMPLATE_FOLDER = PROJECT_ROOT / 'web'
-STATIC_FOLDER = PROJECT_ROOT / 'web'
+TEMPLATE_FOLDER = BUNDLE_DIR / 'web'
+STATIC_FOLDER = BUNDLE_DIR / 'web'
 DATA_DIR = PROJECT_ROOT / 'data'
 SETTINGS_FILE = DATA_DIR / 'web-setting.json'
 
@@ -89,6 +89,29 @@ def update_job_status(job_id: str, **fields: object) -> None:
             return
         job.update(fields)
         job["updated_at"] = time.time()
+
+
+def parse_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    if isinstance(value, (int, float)):
+        return value != 0
+    return False
+
+
+def wait_for_job_completion(job_id: str, timeout: float = 60.0) -> dict[str, object]:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with job_lock:
+            job = job_statuses.get(job_id)
+        if job and job["status"] in {"done", "failed"}:
+            return job
+        time.sleep(0.2)
+    return job or {"status": "unknown", "result": None, "error": "timeout"}
 
 
 def process_export_task(task: dict[str, object]) -> str:
@@ -213,8 +236,22 @@ def exporter():
             if not payload.get("profilename"):
                 raise ValueError("profilename을 JSON으로 제공해야 합니다.")
 
+        wait_flag = True
+        if payload.get("wait") is not None:
+            wait_flag = parse_bool(payload.get("wait"))
+        timeout_value = float(payload.get("timeout", 60)) if payload.get("timeout") is not None else 60.0
+
         job_id = create_export_job(payload)
         logger.info("[exporter] queued job %s", job_id)
+        if wait_flag:
+            job = wait_for_job_completion(job_id, timeout=timeout_value)
+            return jsonify({
+                "job_id": job_id,
+                "status": job.get("status"),
+                "result": job.get("result"),
+                "error": job.get("error"),
+            })
+
         return jsonify({"job_id": job_id, "status": "pending"})
 
     except Exception as e:
