@@ -45,7 +45,7 @@ python app.py
 - `endfield.py`: Endfield 가챠 기록 추출 및 JSON 파일 저장 로직
 - `wuwa.py`: Wuthering Waves 가챠 URL 검사 및 데이터 추출 로직
 - `requirements.txt`: 필요한 Python 패키지 목록
-- `README.md`: 이동 안내 파일
+- `README.md`: 전체 문서는 이 파일을 참조하는 안내 파일
 - `ex_json.md`: 공통 JSON 스키마 및 필드 설명
 - `test.html`: 테스트 목적의 HTML 파일
 - `.gitignore`: Git 무시 설정
@@ -88,14 +88,14 @@ python app.py
       "bannerName": "이벤트 임시 뽑기",
       "items": [
         {
-          "type": 1
+          "type": 1,
           "seqId": "499",
           "name": "에스텔라",
           "rarity": "5",
           "timestamp": 1778374719795
         },
         {
-          "type" : 1 
+          "type" : 1,
           "seqId": "498",
           "name": "플루라이트",
           "rarity": "4",
@@ -107,7 +107,7 @@ python app.py
       "bannerName": "상시 뽑기",
       "items": [
         {
-          "type": 1
+          "type": 1,
           "seqId": "373",
           "name": "아케쿠리",
           "rarity": "5",
