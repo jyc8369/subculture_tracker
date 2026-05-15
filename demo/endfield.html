@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Arknights Endfield Tracker</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<style>
+:root {
+  --bg: #09090b;
+  --card: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.08);
+  --text: #ffffff;
+  --muted: #a1a1aa;
+  --accent: #8b5cf6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, sans-serif;
+  background:
+    radial-gradient(circle at top left, #312e81, transparent 28%),
+    radial-gradient(circle at bottom right, #0f766e, transparent 28%),
+    var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--text);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 45%, rgba(255,255,255,0.02));
+  pointer-events: none;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.32);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0 0 0 16px;
+  text-align: left;
+}
+
+nav {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.home {
+  width: 44px;
+  height: 44px;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0;
+  min-width: 44px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.home::before {
+  content: '🏠';
+}
+
+.home:hover,
+.home:focus {
+  background: rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
+
+.settings-btn {
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.28);
+  color: #e9d5ff;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+.settings-btn:hover,
+.settings-btn:focus {
+  background: rgba(139,92,246,0.22);
+  border-color: rgba(139,92,246,0.42);
+  transform: translateY(-1px);
+}
+
+.container {
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 24px;
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139,92,246,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.tracker-shell {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.side-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 560px;
+}
+
+.side-rail-header h2 {
+  margin: 8px 0 0;
+}
+
+.side-rail-list {
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.side-rail-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.side-rail-item {
+  width: 100%;
+  text-align: left;
+  padding: 18px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+  display: grid;
+  gap: 12px;
+}
+
+.side-rail-item:hover,
+.side-rail-item.active {
+  background: rgba(139,92,246,0.16);
+  transform: translateY(-1px);
+}
+
+.side-rail-item-title {
+  font-size: 1rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.banner-note-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.banner-note {
+  flex: 1 1 48%;
+  min-width: 120px;
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.banner-note-value {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.banner-note-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.72);
+}
+
+.main-rail {
+  display: grid;
+  gap: 24px;
+}
+
+.tracker-card {
+  display: grid;
+  gap: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.stat-card p {
+  margin: 0 0 10px;
+  color: rgba(255,255,255,0.72);
+  font-weight: 600;
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.record-card {
+  display: grid;
+  gap: 20px;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.record-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box {
+  display: block;
+  width: min(260px, 100%);
+  margin-left: 0;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+}
+
+.search-box input::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.text-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(15, 23, 42, 0.95);
+  color: #fff;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: rgba(139,92,246,0.85);
+  box-shadow: 0 0 0 4px rgba(139,92,246,0.12);
+  background: rgba(15, 23, 42, 1);
+}
+
+.record-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  font-weight: 700;
+}
+
+.record-table-wrapper {
+  overflow-x: auto;
+  border-radius: 24px;
+}
+
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 540px;
+}
+
+.record-table th,
+.record-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  text-align: left;
+  color: #e5e7eb;
+}
+
+.record-table th {
+  background: rgba(255,255,255,0.04);
+  color: #c7d2fe;
+  font-weight: 600;
+}
+
+.record-table tbody tr:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: rgba(255,255,255,0.68);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  width: min(520px, 100%);
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.35);
+  border-radius: 28px;
+  padding: 28px 28px 24px;
+}
+
+.settings-modal-content {
+  display: grid;
+  gap: 18px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.form-row {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-content input[type="file"],
+.dropdown-toggle {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  text-align: left;
+}
+
+.dropdown-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown-toggle:hover,
+.dropdown-toggle:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dropdown-arrow {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dropdown-list {
+  position: relative;
+  max-height: 220px;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  margin-top: 8px;
+  padding: 8px 0;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+  z-index: 60;
+}
+
+.dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item.active {
+  background: rgba(139, 92, 246, 0.18);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.form-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.upload-label {
+  font-weight: 600;
+  color: #fff;
+}
+
+.primary-button {
+  border: none;
+  border-radius: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  transition: filter 0.25s ease, transform 0.25s ease;
+}
+
+.primary-button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 900px) {
+  .record-table {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .navbar {
+    padding: 18px 20px;
+    flex-wrap: wrap;
+  }
+
+  .container {
+    width: min(100% - 32px, 1200px);
+    padding-top: 24px;
+  }
+
+  .card {
+    padding: 22px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+	<header class="navbar">
+		<button class="home" type="button" onclick="location.href='/demo/main.html' ;" aria-label="Home"></button>
+		<div class="logo">ARKNIGHTS ENDFIELD</div>
+		<nav aria-label="메인 네비게이션">
+			<button class="settings-btn" type="button" onclick="openSettingsModal()">Settings</button>
+		</nav>
+	</header>
+
+	<main class="container">
+		<section class="tracker-shell">
+			<aside class="side-rail card">
+				<div class="side-rail-header">
+					<p class="eyebrow">선택</p>
+					<h2>헤드 헌팅</h2>
+				</div>
+				<div class="side-rail-list"></div>
+		</aside>
+			<section class="main-rail">
+				<article class="card tracker-card">
+					<div class="section-heading">
+						<p class="eyebrow">CHARACTER EVENT</p>
+						<h2>특별 허가 헤드헌팅</h2>
+					</div>
+					<div class="stats-grid">
+						<div class="stat-card">
+							<p>총 뽑기 수</p>
+							<strong>0</strong>
+						</div>
+						<div class="stat-card">
+							<p>총 오르베릴</p>
+							<strong>0</strong>
+						</div>
+						<div class="stat-card">
+							<p>6✦ 뽑은 횟수</p>
+							<strong>0</strong>
+						</div>
+						<div class="stat-card">
+							<p>5✦ 뽑은 횟수</p>
+							<strong>0</strong>
+						</div>
+					</div>
+				</article>
+
+				<article class="card record-card">
+					<div class="record-header">
+						<div>
+							<p class="eyebrow">History</p>
+							<h2>뽑기 기록</h2>
+						</div>
+						<div class="record-meta">
+							<span id="record-count" class="record-count">0</span>
+							<label class="search-box">
+								<input id="search-input" type="search" placeholder="검색하기" aria-label="검색하기" />
+							</label>
+						</div>
+					</div>
+					<div class="record-table-wrapper">
+						<table class="record-table">
+							<thead>
+								<tr>
+									<th>회차 No.</th>
+									<th>항목 이름</th>
+									<th>등급</th>
+									<th>시간 (UTC+9)</th>
+								</tr>
+							</thead>
+							<tbody id="record-tbody"></tbody>
+						</table>
+					</div>
+				</article>
+			</section>
+		</section>
+	</main>
+
+<div id="settings-modal" class="modal">
+  <div class="modal-content settings-modal-content">
+    <div class="modal-header">
+      <h2>설정</h2>
+      <button type="button" class="close-btn" onclick="closeSettingsModal()" aria-label="모달 닫기">&times;</button>
+    </div>
+    <div class="form-row">
+      <label for="profile-name-input" class="upload-label">프로필 파일 이름</label>
+      <input id="profile-name-input" type="text" placeholder="예: endfield_example.json" class="text-input" />
+    </div>
+    <button id="update-info-button" type="button" class="primary-button">정보 업데이트 / 생성</button>
+    <p id="update-info-status" class="form-note">프로필 선택 후 정보를 업데이트하거나 생성합니다.</p>
+
+    <div class="form-row">
+      <label class="upload-label">프로필 파일 선택</label>
+      <button id="file-dropdown-toggle" type="button" class="dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">
+        <span id="file-dropdown-label">프로필 목록 불러오는 중...</span>
+        <span class="dropdown-arrow">▾</span>
+      </button>
+      <div id="file-dropdown" class="dropdown-list hidden" role="listbox" tabindex="-1"></div>
+    </div>
+    <button id="load-file-button" type="button" class="primary-button">선택된 파일 불러오기</button>
+    <p id="file-list-status" class="form-note"></p>
+  </div>
+</div>
+</body>
+<script>
+/* =========================
+   STATIC TRACKER CONFIG
+========================= */
+
+const STATIC_FILE_LIST = [
+  '예시 프로필 파일'
+];
+
+const STATIC_TRACKER_DATA = {
+  rows: [
+    {
+      id: '1234',
+      banners: [
+        {
+          bannerName: '봄의 천둥, 만물의 소생',
+          items: [
+            {
+              type: 1,
+              seqId: '1',
+              name: '에스텔라',
+              rarity: '4',
+              timestamp: 1778374719795
+            },
+            {
+              type: 1,
+              seqId: '2',
+              name: '플루라이트',
+              rarity: '4',
+              timestamp: 1778374719795
+            },
+            {
+              type: 1,
+              seqId: '451',
+              name: '아델리아',
+              rarity: '6',
+              timestamp: 1778374662009
+            }
+          ]
+        },
+        {
+          bannerName: '울프펄',
+          items: [
+            {
+              type: 1,
+              seqId: '373',
+              name: '아케쿠리',
+              rarity: '4',
+              timestamp: 1776008954258
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/* =========================
+   COMMON
+========================= */
+
+const commonGetEl = selector => document.querySelector(selector);
+
+const defaultSelectors = {
+  profileNameInput: '#profile-name-input',
+  fileDropdownToggle: '#file-dropdown-toggle',
+  fileDropdown: '#file-dropdown',
+  fileDropdownLabel: '#file-dropdown-label',
+  loadFileButton: '#load-file-button',
+  updateInfoButton: '#update-info-button',
+  fileListStatus: '#file-list-status',
+  updateInfoStatus: '#update-info-status',
+  recordBody: '#record-tbody',
+  recordCount: '#record-count',
+  searchInput: '#search-input',
+  bannerTitle: '.tracker-card .section-heading h2',
+  sideRailList: '.side-rail-list'
+};
+
+const normalizeCommonTrackerConfig = config => {
+  config.selectors = {
+    ...defaultSelectors,
+    ...(config.selectors || {})
+  };
+
+  config.state = {
+    selectedFile: '',
+    files: [],
+    allRows: [],
+    currentDisplayRows: [],
+    selectedBanner: '',
+    selectedPoolType: '',
+    searchInput: null,
+    ...config.state
+  };
+
+  return config;
+};
+
+/* =========================
+   FILE DROPDOWN
+========================= */
+
+const updateFileSelectionUI = config => {
+  const label = commonGetEl(config.selectors.fileDropdownLabel);
+  const input = commonGetEl(config.selectors.profileNameInput);
+
+  if (label) {
+    label.textContent = config.state.selectedFile || '선택된 파일이 없습니다.';
+  }
+
+  if (input) {
+    input.value = config.state.selectedFile || '';
+  }
+};
+
+const highlightSelectedFileItem = config => {
+  document.querySelectorAll('.dropdown-item').forEach(item => {
+    item.classList.toggle(
+      'active',
+      item.dataset.filename === config.state.selectedFile
+    );
+  });
+};
+
+const populateFileList = (files, config) => {
+  const dropdown = commonGetEl(config.selectors.fileDropdown);
+  const status = commonGetEl(config.selectors.fileListStatus);
+
+  if (!dropdown) return;
+
+  config.state.files = files;
+
+  dropdown.innerHTML = files.map(filename => `
+    <div
+      class="dropdown-item"
+      data-filename="${filename}"
+    >
+      ${filename}
+    </div>
+  `).join('');
+
+  config.state.selectedFile = files[0];
+
+  updateFileSelectionUI(config);
+  highlightSelectedFileItem(config);
+
+  if (status) {
+    status.textContent = `발견된 JSON 파일 ${files.length}개`;
+  }
+};
+
+const toggleFileDropdown = config => {
+  const dropdown = commonGetEl(config.selectors.fileDropdown);
+
+  if (!dropdown) return;
+
+  dropdown.classList.toggle('hidden');
+};
+
+const closeFileDropdown = config => {
+  const dropdown = commonGetEl(config.selectors.fileDropdown);
+
+  if (!dropdown) return;
+
+  dropdown.classList.add('hidden');
+};
+
+const handleFileDropdownClick = (event, config) => {
+  const item = event.target.closest('.dropdown-item');
+
+  if (!item) return;
+
+  config.state.selectedFile = item.dataset.filename;
+
+  updateFileSelectionUI(config);
+  highlightSelectedFileItem(config);
+  closeFileDropdown(config);
+};
+
+/* =========================
+   PITY
+========================= */
+
+const getPityThresholds = config => ({
+  topQuality: config.pityTopQuality || 6,
+  nextQuality: config.pityNextQuality || 5,
+  topThreshold: config.pityTopThreshold || 120,
+  nextThreshold: config.pityNextThreshold || 10,
+  topLabel: `${config.pityTopQuality || 6}✦ 천장`,
+  nextLabel: `${config.pityNextQuality || 5}✦ 천장`
+});
+
+const getBannerPityCounts = (rows, banner, config) => {
+  const {
+    topQuality,
+    nextQuality,
+    topThreshold,
+    nextThreshold
+  } = getPityThresholds(config);
+
+  const categoryRows = rows.filter(
+    row => row.cardPoolType === banner
+  );
+
+  let sinceTop = 0;
+  let sinceNext = 0;
+
+  let foundTop = false;
+  let foundNext = false;
+
+  for (let i = categoryRows.length - 1; i >= 0; i--) {
+    const row = categoryRows[i];
+
+    if (!foundTop) {
+      if (row.qualityLevel >= topQuality) {
+        foundTop = true;
+      } else {
+        sinceTop++;
+      }
+    }
+
+    if (!foundNext) {
+      if (row.qualityLevel >= nextQuality) {
+        foundNext = true;
+      } else {
+        sinceNext++;
+      }
+    }
+  }
+
+  return {
+    pityTop: `${sinceTop}/${topThreshold}`,
+    pityNext: `${sinceNext}/${nextThreshold}`
+  };
+};
+
+/* =========================
+   RECORDS
+========================= */
+
+const renderRecords = (rows, config) => {
+  const tbody = commonGetEl(config.selectors.recordBody);
+  const countSpan = commonGetEl(config.selectors.recordCount);
+
+  if (!tbody) return;
+
+  config.state.currentDisplayRows = rows;
+
+  tbody.innerHTML = rows.map((row, index) => `
+    <tr>
+      <td>${index + 1}</td>
+
+      <td class="record-name quality-${row.qualityLevel}">
+        ${row.name}
+      </td>
+
+      <td>${row.qualityLevel}✦</td>
+
+      <td>${row.time}</td>
+    </tr>
+  `).join('');
+
+  if (countSpan) {
+    countSpan.textContent = rows.length;
+  }
+};
+
+const renderStats = (rows, config) => {
+  const statCards = document.querySelectorAll('.stat-card strong');
+
+  if (statCards.length < 4) return;
+
+  const totalPulls = rows.length;
+
+  const totalStars = rows.reduce((sum, row) => {
+    return sum + (row.count || 0);
+  }, 0);
+
+  const topCount = rows.filter(
+    row => row.qualityLevel === config.pityTopQuality
+  ).length;
+
+  const nextCount = rows.filter(
+    row => row.qualityLevel === config.pityNextQuality
+  ).length;
+
+  statCards[0].textContent = totalPulls;
+  statCards[1].textContent = totalStars;
+  statCards[2].textContent = topCount;
+  statCards[3].textContent = nextCount;
+};
+
+/* =========================
+   SIDE RAIL
+========================= */
+
+const updateBannerSelection = (
+  banner,
+  poolType,
+  config
+) => {
+  config.state.selectedBanner = banner;
+  config.state.selectedPoolType = poolType;
+
+  document.querySelectorAll('.side-rail-item').forEach(button => {
+    button.classList.toggle(
+      'active',
+      button.dataset.poolType === poolType
+    );
+  });
+
+  const bannerTitle = commonGetEl(config.selectors.bannerTitle);
+
+  if (bannerTitle) {
+    bannerTitle.textContent = banner;
+  }
+
+  const filteredRows = config.state.allRows.filter(
+    row => row.cardPoolType === poolType
+  );
+
+  renderStats(filteredRows, config);
+  renderRecords(filteredRows, config);
+};
+
+const attachSideRailHandlers = config => {
+  document.querySelectorAll('.side-rail-item').forEach(button => {
+    button.addEventListener('click', () => {
+      updateBannerSelection(
+        button.dataset.banner,
+        button.dataset.poolType,
+        config
+      );
+    });
+  });
+};
+
+const populateSideRailItems = (items, config) => {
+  const list = commonGetEl(config.selectors.sideRailList);
+
+  if (!list) return;
+
+  list.innerHTML = items.map((item, index) => {
+    const {
+      pityTop,
+      pityNext
+    } = getBannerPityCounts(
+      config.state.allRows,
+      item.banner,
+      config
+    );
+
+    const {
+      topLabel,
+      nextLabel
+    } = getPityThresholds(config);
+
+    return `
+      <button
+        class="side-rail-item ${index === 0 ? 'active' : ''}"
+        data-banner="${item.banner}"
+        data-pool-type="${item.poolType}"
+      >
+        <span class="side-rail-item-title">
+          ${item.title}
+        </span>
+
+        <div class="banner-note-group">
+
+          <div class="banner-note">
+            <p class="banner-note-value">${pityTop}</p>
+            <p class="banner-note-label">${topLabel}</p>
+          </div>
+
+          <div class="banner-note">
+            <p class="banner-note-value">${pityNext}</p>
+            <p class="banner-note-label">${nextLabel}</p>
+          </div>
+
+        </div>
+      </button>
+    `;
+  }).join('');
+};
+
+/* =========================
+   MODAL
+========================= */
+
+const openSettingsModal = () => {
+  const modal = document.getElementById('settings-modal');
+
+  if (!modal) return;
+
+  modal.classList.add('show');
+};
+
+const closeSettingsModal = () => {
+  const modal = document.getElementById('settings-modal');
+
+  if (!modal) return;
+
+  modal.classList.remove('show');
+};
+
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+
+/* =========================
+   INIT
+========================= */
+
+const initCommonTracker = config => {
+  config = normalizeCommonTrackerConfig(config);
+
+  const fileToggle = commonGetEl(
+    config.selectors.fileDropdownToggle
+  );
+
+  const fileDropdown = commonGetEl(
+    config.selectors.fileDropdown
+  );
+
+  if (fileToggle) {
+    fileToggle.addEventListener('click', () => {
+      toggleFileDropdown(config);
+    });
+  }
+
+  if (fileDropdown) {
+    fileDropdown.addEventListener('click', event => {
+      handleFileDropdownClick(event, config);
+    });
+  }
+
+  const updateInfoButton = commonGetEl(config.selectors.updateInfoButton);
+  if (updateInfoButton) {
+    updateInfoButton.addEventListener('click', () => {
+      alert('Demo 버전에서는 지원하지 않는 기능입니다.');
+    });
+  }
+
+  document.addEventListener('click', event => {
+    const dropdown = commonGetEl(config.selectors.fileDropdown);
+
+    if (
+      dropdown &&
+      !dropdown.contains(event.target) &&
+      !fileToggle.contains(event.target)
+    ) {
+      closeFileDropdown(config);
+    }
+  });
+
+  populateFileList(STATIC_FILE_LIST, config);
+
+  const staticBanners = STATIC_TRACKER_DATA.rows?.[0]?.banners || [];
+  const sideRailItems = staticBanners.map((banner, index) => {
+    const title = banner.bannerName || `헤드 헌팅 ${index + 1}`;
+    const poolType = String(banner.bannerName || index + 1);
+
+    return {
+      title,
+      banner: banner.bannerName || title,
+      poolType,
+      items: banner.items || []
+    };
+  });
+
+  config.state.allRows = sideRailItems.flatMap(banner =>
+    (banner.items || []).map(item => ({
+      ...item,
+      name: item.name || '',
+      qualityLevel: Number(item.rarity) || 0,
+      time: item.timestamp ? new Date(Number(item.timestamp)).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '',
+      count: 1,
+      cardPoolType: banner.poolType
+    }))
+  );
+
+  populateSideRailItems(sideRailItems, config);
+  attachSideRailHandlers(config);
+
+  if (sideRailItems.length > 0) {
+    updateBannerSelection(
+      sideRailItems[0].banner,
+      sideRailItems[0].poolType,
+      config
+    );
+  }
+};
+
+/* =========================
+   RUN
+========================= */
+
+initCommonTracker({
+  pityTopQuality: 6,
+  pityNextQuality: 5,
+  pityTopThreshold: 120,
+  pityNextThreshold: 10
+});
+</script>
+</body>
+</html>

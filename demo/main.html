@@ -7,7 +7,253 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+	<style>
+		:root {
+			--bg: #09090b;
+			--card: rgba(255,255,255,0.05);
+			--border: rgba(255,255,255,0.08);
+			--text: #ffffff;
+			--muted: #a1a1aa;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html {
+			scroll-behavior: smooth;
+		}
+
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: Inter, sans-serif;
+			background:
+				radial-gradient(circle at top left, #312e81, transparent 28%),
+				radial-gradient(circle at bottom right, #0f766e, transparent 28%),
+				var(--bg);
+			background-attachment: fixed;
+			background-repeat: no-repeat;
+			color: var(--text);
+		}
+
+		body::before {
+			content: '';
+			position: fixed;
+			inset: 0;
+			background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 45%, rgba(255,255,255,0.02));
+			pointer-events: none;
+		}
+
+		a {
+			color: inherit;
+		}
+
+		.navbar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 24px;
+			padding: 20px 32px;
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			backdrop-filter: blur(10px);
+			background: rgba(0,0,0,0.32);
+			border-bottom: 1px solid rgba(255,255,255,0.05);
+		}
+
+		.logo {
+			font-size: 1.4rem;
+			font-weight: 700;
+			letter-spacing: 0.16em;
+			text-transform: uppercase;
+			margin: 0 0 0 16px;
+			text-align: left;
+		}
+
+		.container {
+			width: min(1200px, calc(100% - 48px));
+			margin: 0 auto;
+			padding: 32px 0 48px;
+			display: flex;
+			flex-direction: column;
+			gap: 24px;
+		}
+
+		.hero-card {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			padding: 32px;
+		}
+
+		.section-block {
+			display: flex;
+			flex-direction: column;
+			gap: 24px;
+		}
+
+		.section-heading {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.section-heading h2 {
+			margin: 0;
+		}
+
+		.eyebrow {
+			margin: 0;
+			color: rgba(255,255,255,0.68);
+			font-size: 0.78rem;
+			font-weight: 700;
+			letter-spacing: 0.22em;
+			text-transform: uppercase;
+		}
+
+		.hero-meta {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+
+		.pill {
+			padding: 10px 14px;
+			border-radius: 999px;
+			background: rgba(255,255,255,0.08);
+			border: 1px solid rgba(255,255,255,0.08);
+			color: #f4f4f5;
+			font-size: 0.92rem;
+		}
+
+		.card {
+			background: var(--card);
+			border: 1px solid var(--border);
+			backdrop-filter: blur(12px);
+			border-radius: 24px;
+			padding: 24px;
+			transition:
+				transform 0.25s ease,
+				border-color 0.25s ease,
+				background 0.25s ease,
+				box-shadow 0.25s ease;
+		}
+
+		.card:hover {
+			transform: translateY(-4px);
+			border-color: rgba(139,92,246,0.5);
+			box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+			gap: 24px;
+		}
+
+		.game-grid {
+			align-items: stretch;
+		}
+
+		.game-card {
+			position: relative;
+			overflow: hidden;
+			min-height: 280px;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			gap: 24px;
+			text-decoration: none;
+		}
+
+		.game-card::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(145deg, rgba(139,92,246,0.16), transparent 38%, rgba(34,197,94,0.08));
+			opacity: 0.9;
+			pointer-events: none;
+		}
+
+		.game-card > * {
+			position: relative;
+			z-index: 1;
+		}
+
+		.game-card.featured {
+			border-color: rgba(139,92,246,0.24);
+		}
+
+		.game-card.disabled {
+			opacity: 0.72;
+		}
+
+		.game-status {
+			align-self: flex-start;
+			padding: 8px 12px;
+			border-radius: 999px;
+			background: rgba(255,255,255,0.1);
+			border: 1px solid rgba(255,255,255,0.08);
+			font-size: 0.82rem;
+			font-weight: 600;
+		}
+
+		.game-status.soon {
+			background: rgba(255,255,255,0.06);
+			color: rgba(255,255,255,0.72);
+		}
+
+		.game-description {
+			margin: 0;
+			color: var(--muted);
+			line-height: 1.75;
+		}
+
+		.game-footer {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			color: #fff;
+			font-weight: 600;
+		}
+
+		.muted-footer {
+			color: rgba(255,255,255,0.72);
+		}
+
+		.hero-card h1,
+		.card h2 {
+			margin: 0 0 12px;
+			color: #fff;
+		}
+
+		.card h3 {
+			margin: 0 0 12px;
+			color: #fff;
+			font-size: 1.4rem;
+		}
+
+		.hero-card h1 {
+			font-size: clamp(2rem, 3vw, 3rem);
+			line-height: 1.05;
+		}
+
+		.hero-card p,
+		.hint {
+			margin: 0;
+			color: var(--muted);
+			line-height: 1.75;
+		}
+
+		.meta {
+			margin: 0;
+			color: var(--muted);
+			font-size: 0.95rem;
+		}
+	</style>
 </head>
 <body>
 	<header class="navbar">
@@ -36,41 +282,38 @@
 			</div>
 
 			<section class="grid game-grid" aria-label="게임 선택 목록">
-				<a class="card game-card featured" href="game/wuthering_waves.html">
+				<a class="card game-card featured" href="endfield.html">
 					<span class="game-status">사용 가능</span>
+					<div>
+						<p class="meta">Hypergryph</p>
+						<h3>Endfield</h3>
+						<p class="game-description">예시 헤드헌팅 기록을 확인할 수 있습니다.</p>
+					</div>
+					<div class="game-footer">
+						<span>오픈하기</span>
+						<span aria-hidden="true">&rarr;</span>
+					</div>
+				</a>
+				<div class="card game-card disabled" aria-disabled="true">
+					<span class="game-status soon">미오픈</span>
 					<div>
 						<p class="meta">Kuro Games</p>
 						<h3>Wuthering Waves</h3>
-						<p class="game-description">튜닝 기록 조회</p>
-					</div>
-					<div class="game-footer">
-						<span>오픈하기</span>
-						<span aria-hidden="true">&rarr;</span>
-					</div>
-				</a>
-
-				<a class="card game-card" href="game/arknights_endfield.html">
-					<span class="game-status">사용 가능</span>
-					<div>
-						<p class="meta">Yostar</p>
-						<h3>Arknights Endfield</h3>
-						<p class="game-description">새로 생성된 페이지로 이동합니다.</p>
-					</div>
-					<div class="game-footer">
-						<span>오픈하기</span>
-						<span aria-hidden="true">&rarr;</span>
-					</div>
-				</a>
-
-				<div class="card game-card disabled" aria-disabled="true">
-					<span class="game-status soon">곧 출시</span>
-					<div>
-						<p class="meta">HoYoverse</p>
-						<h3>Zenless Zone Zero</h3>
-						<p class="game-description">동일한 카드 템플릿을 재사용해 게임별 대시보드를 계속 추가할 수 있습니다.</p>
+						<p class="game-description">튜닝 기록을 확인할 수 있습니다.</p>
 					</div>
 					<div class="game-footer muted-footer">
-						<span>준비 중</span>
+						<span>비활성</span>
+					</div>
+				</div>
+				<div class="card game-card disabled" aria-disabled="true">
+					<span class="game-status soon">미오픈</span>
+					<div>
+						<p class="meta">HoYoverse</p>
+						<h3>Genshin Impact</h3>
+						<p class="game-description">기원 기록을 확인할 수 있습니다.</p>
+					</div>
+					<div class="game-footer muted-footer">
+						<span>비활성</span>
 					</div>
 				</div>
 			</section>
