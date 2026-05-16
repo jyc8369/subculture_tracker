@@ -346,6 +346,7 @@ def fetch_data_with_post(url: str) -> dict:
                 if records:
                     for record in records:
                         record.pop('cardPoolType', None)
+                    all_records[pool_name].extend(records)
                     logger.info("[wuwa] %s records=%s", pool_name, len(records))
                 else:
                     logger.warning("[wuwa] %s no records", pool_name)
