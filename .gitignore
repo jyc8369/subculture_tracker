@@ -1,9 +1,12 @@
 /.venv
+/.vscode
 /alpha_dev
+/alpha
 /data
 /__pycache__
 /dist
 /build
+x
 *.pyc
 *.pyo
 *.pyd
