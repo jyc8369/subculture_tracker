@@ -1,4 +1,5 @@
-<img width="621" height="427" alt="스크린샷 2026-05-16 100754" src="https://github.com/user-attachments/assets/208f1166-b717-4d50-8616-4fb53ddb842a" />
+<img width="360" height="240" alt="스크린샷 2026-05-16 124719" src="https://github.com/user-attachments/assets/2e231806-f9e3-4a30-b9ab-19ab44a6115c" /> <img width="360" height="240" alt="video" src="https://github.com/user-attachments/assets/4239b65d-f730-4f8c-962b-e3d958849ed7" />
+
 
 # Subculture Tracker
 게임을 플레이하면 가챠 결과를 자동으로 불러와 저장하며, 사용자는 프로그램 안에서 바로 기록을 확인할 수 있습니다.
