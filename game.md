@@ -24,7 +24,7 @@
 |뽑기       |튜닝       |
 |캐릭터     |공명자     |
 
-URL방식을 채택했습니다.
+URL방식을 채택했습니다.   
 URL의 유호기한은 약 30분 내외인것으로 보입니다.  
 <img width="480" height="" alt="명조사용법안내1" src="demo\source\명조_사용법안내1.png" /><br>
 <img width="480" height="" alt="명조사용법안내2" src="demo\source\명조_사용법안내2.png" /><br>
