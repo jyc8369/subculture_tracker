@@ -13,7 +13,6 @@ from pathlib import Path
 from flask import Flask, render_template, send_from_directory, request, jsonify
 
 import backend.endfield as endfield
-import backend.webview as webview
 import backend.wuwa as wuwa
 
 
@@ -38,9 +37,22 @@ app = Flask(
     __name__,
     template_folder=str(TEMPLATE_FOLDER),
     static_folder=str(STATIC_FOLDER),
+    static_url_path='/static',
 )
 
 logger = logging.getLogger(__name__)
+
+
+class WerkzugLogNameFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.name == 'werkzeug':
+            record.name = __name__
+        return True
+
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.handlers.clear()
+werkzeug_logger.propagate = True
+werkzeug_logger.addFilter(WerkzugLogNameFilter())
 
 
 # ------------------------------------------------------------------
@@ -173,6 +185,11 @@ def serve_game_files(filename):
     return send_from_directory(str(STATIC_FOLDER / 'game'), filename)
 
 
+@app.route('/web/<path:filename>')
+def serve_web_files(filename):
+    return send_from_directory(str(STATIC_FOLDER), filename)
+
+
 @app.route('/data/list')
 def get_data_file_list():
     data_dir = DATA_DIR
@@ -269,7 +286,15 @@ def exporter_status(job_id):
     return jsonify(job)
 
 
-def run() -> None:
+def _import_webview():
+    try:
+        import backend.webview as webview
+        return webview
+    except ImportError:
+        return None
+
+
+def run(use_browser: bool = False) -> None:
     port = find_free_port()
     url = f'http://127.0.0.1:{port}/'
 
@@ -279,6 +304,25 @@ def run() -> None:
 
     server_thread = threading.Thread(target=run_flask, daemon=True)
     server_thread.start()
+
+    if use_browser:
+        import webbrowser
+        import time
+
+        def open_browser() -> None:
+            time.sleep(1)
+            webbrowser.open(url)
+
+        browser_thread = threading.Thread(target=open_browser, daemon=True)
+        browser_thread.start()
+
+    webview = _import_webview()
+    if webview is None:
+        if use_browser:
+            logger.warning('[app] webview package unavailable; opening browser only')
+            server_thread.join()
+            return
+        raise RuntimeError('webview 패키지가 설치되어 있지 않습니다. pywebview를 설치하거나 -dev 모드로 실행하십시오.')
 
     webview.create_and_start_window(url)
 

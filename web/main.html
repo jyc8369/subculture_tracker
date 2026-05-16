@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Subculture Tracker</title>
+	<title data-i18n="mainTitle">Subculture Tracker</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,70 +11,101 @@
 </head>
 <body>
 	<header class="navbar">
-		<div class="logo">SC TRACKER</div>
+		<div class="logo" data-i18n="mainTitle">SC TRACKER</div>
+		<nav aria-label="메인 네비게이션">
+			<button class="settings-btn" type="button" onclick="openSettingsModal()" data-i18n="settings" data-i18n-aria="settings">Settings</button>
+		</nav>
 	</header>
 
 	<main class="container">
 		<section class="hero-card card" id="dashboard">
-			<p class="eyebrow">소개</p>
-			<h1>서브컬쳐 게임 천장 트래커</h1>
-			<p>
-				서브컬쳐 게임의 가챠와 관련된 정보를 한눈에 확인할 수 있는 트래커입니다.
-			</p>
+			<p class="eyebrow" data-i18n="introLabel">소개</p>
+			<h1 data-i18n="mainTitle">서브컬쳐 게임 천장 트래커</h1>
+			<p data-i18n="heroIntro">서브컬쳐 게임의 가챠와 관련된 정보를 한눈에 확인할 수 있는 트래커입니다.</p>
 			<div class="hero-meta">
-				<span class="pill">천장 확인</span>
-				<span class="pill">기록 확인</span>
-				<span class="pill">통계 분석</span>
+				<span class="pill" data-i18n="heroPill1">천장 확인</span>
+				<span class="pill" data-i18n="heroPill2">기록 확인</span>
+				<span class="pill" data-i18n="heroPill3">통계 분석</span>
 			</div>
 		</section>
 
 		<section class="section-block" id="tracker">
 			<div class="section-heading">
-				<p class="eyebrow">TRACKER</p>
-				<h2>게임 선택</h2>
-				<p class="hint">카드를 눌러 해당 게임 전용 화면으로 이동합니다.</p>
+				<p class="eyebrow" data-i18n="trackerHeading">TRACKER</p>
+				<h2 data-i18n="trackerHeading">게임 선택</h2>
 			</div>
 
 			<section class="grid game-grid" aria-label="게임 선택 목록">
 				<a class="card game-card featured" href="game/wuthering_waves.html">
-					<span class="game-status">사용 가능</span>
+					<span class="game-status" data-i18n="gameAvailable">사용 가능</span>
 					<div>
 						<p class="meta">Kuro Games</p>
 						<h3>Wuthering Waves</h3>
-						<p class="game-description">튜닝 기록 조회</p>
+						<p class="game-description" data-i18n="gameDescriptionWuwa">튜닝 기록 조회</p>
 					</div>
 					<div class="game-footer">
-						<span>오픈하기</span>
+						<span data-i18n="open">오픈하기</span>
 						<span aria-hidden="true">&rarr;</span>
 					</div>
 				</a>
 
 				<a class="card game-card" href="game/arknights_endfield.html">
-					<span class="game-status">사용 가능</span>
+					<span class="game-status" data-i18n="gameAvailable">사용 가능</span>
 					<div>
 						<p class="meta">Hypergryph</p>
 						<h3>Arknights Endfield</h3>
-						<p class="game-description">새로 생성된 페이지로 이동합니다.</p>
+						<p class="game-description" data-i18n="gameDescriptionEndfield">새로 생성된 페이지로 이동합니다.</p>
 					</div>
 					<div class="game-footer">
-						<span>오픈하기</span>
+						<span data-i18n="open">오픈하기</span>
 						<span aria-hidden="true">&rarr;</span>
 					</div>
 				</a>
 
 				<div class="card game-card disabled" aria-disabled="true">
-					<span class="game-status soon">곧 출시</span>
+					<span class="game-status soon" data-i18n="gameSoon">곧 출시</span>
 					<div>
 						<p class="meta">HoYoverse</p>
 						<h3>Zenless Zone Zero</h3>
-						<p class="game-description">동일한 카드 템플릿을 재사용해 게임별 대시보드를 계속 추가할 수 있습니다.</p>
+						<p class="game-description" data-i18n="gameDescriptionZZZ">동일한 카드 템플릿을 재사용해 게임별 대시보드를 계속 추가할 수 있습니다.</p>
 					</div>
 					<div class="game-footer muted-footer">
-						<span>준비 중</span>
+						<span data-i18n="ready">준비 중</span>
 					</div>
 				</div>
 			</section>
 		</section>
 	</main>
+
+<div id="settings-modal" class="modal">
+  <div class="modal-content settings-modal-content">
+    <div class="modal-header">
+      <h2 data-i18n="settings">설정</h2>
+      <button type="button" class="close-btn" onclick="closeSettingsModal()" data-i18n-aria="close">&times;</button>
+    </div>
+    <div class="form-row">
+      <label for="language-select" class="upload-label" data-i18n="languageLabel">언어</label>
+      <select id="language-select" class="text-input"></select>
+    </div>
+  </div>
+</div>
+
+<script>
+  const openSettingsModal = () => {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    modal.classList.add('show');
+  };
+
+  const closeSettingsModal = () => {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    modal.classList.remove('show');
+  };
+
+  window.openSettingsModal = openSettingsModal;
+  window.closeSettingsModal = closeSettingsModal;
+</script>
+	<script src="/static/i18n.js"></script>
 </body>
 </html>

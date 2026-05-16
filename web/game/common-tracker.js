@@ -1,4 +1,5 @@
 const commonGetEl = selector => document.querySelector(selector);
+const t = key => (window.i18n && typeof window.i18n.t === 'function' ? window.i18n.t(key) : key);
 
 const defaultSelectors = {
   profileNameInput: '#profile-name-input',
@@ -88,7 +89,7 @@ const initCommonTracker = config => {
   document.addEventListener('click', event => handleDocumentClick(event, config));
 
   if (status) {
-    status.textContent = 'data/ 폴더의 JSON 파일을 찾는 중...';
+    status.textContent = t('fileListLoading');
   }
 
   loadFileList(config, true);
@@ -101,7 +102,7 @@ const updateFileSelectionUI = config => {
   if (label) {
     label.textContent = config.state.selectedFile
       ? config.fileLabel(config.state.selectedFile)
-      : '선택된 파일이 없습니다.';
+      : t('noFileSelected');
   }
   if (input) input.value = config.state.selectedFile || '';
 };
@@ -118,20 +119,20 @@ const populateFileList = (files, config) => {
     ? files.map(filename => `
         <div class="dropdown-item" role="option" data-filename="${filename}">${config.fileLabel(filename)}</div>
       `).join('')
-    : '<div class="dropdown-empty">일치하는 JSON 파일이 없습니다.</div>';
+    : `<div class="dropdown-empty">${t('noFilesFound')}</div>`;
 
   if (files.length > 0) {
     config.state.selectedFile = config.state.selectedFile || files[0];
     dropdownLabel.textContent = config.fileLabel(config.state.selectedFile);
     highlightSelectedFileItem(config);
   } else {
-    dropdownLabel.textContent = '로드할 파일을 선택하세요.';
+    dropdownLabel.textContent = t('noFileSelected');
   }
 
   if (status) {
     status.textContent = files.length
-      ? `발견된 JSON 파일 ${files.length}개`
-      : '일치하는 JSON 파일이 없습니다.';
+      ? t('filesFound', { count: files.length })
+      : t('noFilesFound');
   }
 };
 
@@ -151,9 +152,9 @@ const loadFileList = (config, autoLoad = true) => {
       }
     })
     .catch(error => {
-      console.error('JSON 파일 목록을 불러오는 중 오류가 발생했습니다.', error);
+      console.error(t('jsonListError'), error);
       const status = commonGetEl(config.selectors.fileListStatus);
-      if (status) status.textContent = 'JSON 파일 목록을 불러오는 중 오류가 발생했습니다.';
+      if (status) status.textContent = t('jsonListError');
     });
 };
 
@@ -165,13 +166,13 @@ const loadFileData = (filename, config) => {
 
   fetch(`/data/${encodeURIComponent(filename)}`)
     .then(response => {
-      if (!response.ok) throw new Error('파일을 불러올 수 없습니다.');
+      if (!response.ok) throw new Error(t('cannotLoadFile'));
       return response.text();
     })
     .then(text => {
       const extension = filename.split('.').pop().toLowerCase();
       if (extension !== 'json') {
-        throw new Error('지원되지 않는 파일 형식입니다. JSON 파일을 선택해주세요.');
+        throw new Error(t('fileTypeError'));
       }
 
       const json = JSON.parse(text);
@@ -222,7 +223,7 @@ const toggleFileDropdown = config => {
 
   const status = commonGetEl(config.selectors.fileListStatus);
   if (status) {
-    status.textContent = 'data/ 폴더의 JSON 파일을 새로 불러오는 중...';
+    status.textContent = t('fileListReloading');
   }
 
   loadFileList(config, false);
@@ -251,7 +252,7 @@ const handleDocumentClick = (event, config) => {
 
 const handleLoadFileButton = config => {
   if (!config.state.selectedFile) {
-    alert('먼저 파일을 선택해주세요.');
+    alert(t('selectFileFirst'));
     return;
   }
 
@@ -263,7 +264,7 @@ const handleUpdateInfoButton = config => {
 
   if (typeof config.onUpdateInfo === 'function') {
     if (status) {
-      status.textContent = '정보를 업데이트하는 중입니다...';
+      status.textContent = t('updateInfoPending');
     }
 
     Promise.resolve(config.onUpdateInfo(config.state.selectedFile, config.state, config))
@@ -271,13 +272,13 @@ const handleUpdateInfoButton = config => {
         if (status) {
           status.textContent = typeof message === 'string'
             ? message
-            : '정보 업데이트가 완료되었습니다.';
+            : t('updateInfoDone');
         }
       })
       .catch(error => {
         console.error(error);
         if (status) {
-          status.textContent = '정보 업데이트 중 오류가 발생했습니다.';
+          status.textContent = t('updateInfoError');
         }
         alert(error && error.message ? error.message : String(error));
       });
@@ -285,12 +286,12 @@ const handleUpdateInfoButton = config => {
   }
 
   if (!config.state.selectedFile) {
-    alert('먼저 프로필 이름을 입력해주세요.');
+    alert(t('profilePrompt'));
     return;
   }
 
   if (status) {
-    status.textContent = '정보 업데이트 기능이 설정되지 않았습니다.';
+    status.textContent = t('noUpdateFeature');
   }
 };
 

@@ -7,7 +7,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="/web/style.css">
+	<link rel="stylesheet" href="/static/style.css">
 	<style>
 		.record-name.quality-1,
 		.record-name.quality-2,
@@ -25,10 +25,10 @@
 </head>
 <body>
 	<header class="navbar">
-		<button class="home" type="button" onclick="location.href='/' ;" aria-label="Home"></button>
+		<button class="home" type="button" onclick="location.href='/' ;" data-i18n-aria="homeAria" aria-label="Home"></button>
 		<div class="logo">ARKNIGHTS ENDFIELD</div>
 		<nav aria-label="메인 네비게이션">
-			<button class="settings-btn" type="button" onclick="openSettingsModal()">Settings</button>
+			<button class="settings-btn" type="button" onclick="openSettingsModal()" data-i18n="settings">Settings</button>
 		</nav>
 	</header>
 
@@ -36,32 +36,32 @@
 		<section class="tracker-shell">
 			<aside class="side-rail card">
 				<div class="side-rail-header">
-					<p class="eyebrow">선택</p>
-					<h2>헤드 헌팅</h2>
+					<p class="eyebrow" data-i18n="select">선택</p>
+					<h2 data-i18n="sideRailHeading">헤드 헌팅</h2>
 				</div>
 				<div class="side-rail-list"></div>
 		</aside>
 			<section class="main-rail">
 				<article class="card tracker-card">
 					<div class="section-heading">
-						<p class="eyebrow">CHARACTER EVENT</p>
+						<p class="eyebrow" data-i18n="characterEvent">CHARACTER EVENT</p>
 						<h2>특별 허가 헤드헌팅</h2>
 					</div>
 					<div class="stats-grid">
 						<div class="stat-card">
-							<p>총 뽑기 수</p>
+							<p data-i18n="totalPulls">총 뽑기 수</p>
 							<strong>0</strong>
 						</div>
 						<div class="stat-card">
-							<p>총 오르베릴</p>
+							<p data-i18n="totalStars">총 오르베릴</p>
 							<strong>0</strong>
 						</div>
 						<div class="stat-card">
-							<p>6✦ 뽑은 횟수</p>
+							<p data-i18n="pulls6">6✦ 뽑은 횟수</p>
 							<strong>0</strong>
 						</div>
 						<div class="stat-card">
-							<p>5✦ 뽑은 횟수</p>
+							<p data-i18n="pulls5">5✦ 뽑은 횟수</p>
 							<strong>0</strong>
 						</div>
 					</div>
@@ -70,13 +70,13 @@
 				<article class="card record-card">
 					<div class="record-header">
 						<div>
-							<p class="eyebrow">History</p>
-							<h2>뽑기 기록</h2>
+							<p class="eyebrow" data-i18n="history">History</p>
+							<h2 data-i18n="drawRecords">뽑기 기록</h2>
 						</div>
 						<div class="record-meta">
 							<span id="record-count" class="record-count">0</span>
 							<label class="search-box">
-								<input id="search-input" type="search" placeholder="검색하기" aria-label="검색하기" />
+								<input id="search-input" type="search" data-i18n-placeholder="searchPlaceholder" aria-label="검색하기" />
 							</label>
 						</div>
 					</div>
@@ -84,10 +84,10 @@
 						<table class="record-table">
 							<thead>
 								<tr>
-									<th>회차 No.</th>
-									<th>항목 이름</th>
-									<th>등급</th>
-									<th>시간 (UTC+9)</th>
+									<th data-i18n="roundNo">회차 No.</th>
+									<th data-i18n="itemName">항목 이름</th>
+									<th data-i18n="grade">등급</th>
+									<th data-i18n="timeUtc">시간 (UTC+9)</th>
 								</tr>
 							</thead>
 							<tbody id="record-tbody"></tbody>
@@ -101,28 +101,29 @@
 <div id="settings-modal" class="modal">
   <div class="modal-content settings-modal-content">
     <div class="modal-header">
-      <h2>설정</h2>
-      <button type="button" class="close-btn" onclick="closeSettingsModal()" aria-label="모달 닫기">&times;</button>
+      <h2 data-i18n="settings">설정</h2>
+      <button type="button" class="close-btn" onclick="closeSettingsModal()" data-i18n-aria="close">&times;</button>
     </div>
     <div class="form-row">
-      <label for="profile-name-input" class="upload-label">프로필 파일 이름</label>
-      <input id="profile-name-input" type="text" placeholder="예: endfield_example.json" class="text-input" />
+      <label for="profile-name-input" class="upload-label" data-i18n="profileFilename">프로필 파일 이름</label>
+      <input id="profile-name-input" type="text" data-i18n-placeholder="profilePlaceholder" class="text-input" />
     </div>
-    <button id="update-info-button" type="button" class="primary-button">정보 업데이트 / 생성</button>
-    <p id="update-info-status" class="form-note">프로필 선택 후 정보를 업데이트하거나 생성합니다.</p>
+    <button id="update-info-button" type="button" class="primary-button" data-i18n="updateInfoButton">정보 업데이트 / 생성</button>
+    <p id="update-info-status" class="form-note" data-i18n="updateInfoStatus">프로필 선택 후 정보를 업데이트하거나 생성합니다.</p>
 
     <div class="form-row">
-      <label class="upload-label">프로필 파일 선택</label>
+      <label class="upload-label" data-i18n="profileFileSelect">프로필 파일 선택</label>
       <button id="file-dropdown-toggle" type="button" class="dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">
-        <span id="file-dropdown-label">프로필 목록 불러오는 중...</span>
+        <span id="file-dropdown-label" data-i18n="fileListLoading">프로필 목록 불러오는 중...</span>
         <span class="dropdown-arrow">▾</span>
       </button>
       <div id="file-dropdown" class="dropdown-list hidden" role="listbox" tabindex="-1"></div>
     </div>
-    <button id="load-file-button" type="button" class="primary-button">선택된 파일 불러오기</button>
+    <button id="load-file-button" type="button" class="primary-button" data-i18n="loadFileButton">선택된 파일 불러오기</button>
     <p id="file-list-status" class="form-note"></p>
   </div>
 </div>
+<script src="/static/i18n.js"></script>
 <script src="/game/common-tracker.js"></script>
 <script src="/game/config_arknights_endfield.js"></script>
 </body>

@@ -39,7 +39,7 @@ if __name__ == '__main__':
             if os.path.isfile(pythonw):
                 env = os.environ.copy()
                 env['SUBCULTURE_TRACKER_NO_CONSOLE'] = '1'
-                subprocess.Popen([pythonw, __file__], env=env, close_fds=True)
+                subprocess.Popen([pythonw, __file__, *sys.argv[1:]], env=env, close_fds=True)
                 sys.exit(0)
 
     if getattr(sys, 'frozen', False):
@@ -54,12 +54,13 @@ if __name__ == '__main__':
         level=logging.INFO,
         format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
         handlers=[
-            logging.FileHandler(log_path, encoding='utf-8'),
+            logging.FileHandler(log_path, mode='w', encoding='utf-8'),
             logging.StreamHandler(sys.stdout),
         ],
     )
 
     import backend.web as backend_web
 
+    dev_mode = '-dev' in sys.argv[1:]
     logging.info('Starting Subculture Tracker, log file: %s', log_path)
-    backend_web.run()
+    backend_web.run(use_browser=dev_mode)

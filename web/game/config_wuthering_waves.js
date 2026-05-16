@@ -1,3 +1,10 @@
+const translate = (key, vars = {}) => {
+  if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.t === 'function') {
+    return window.i18n.t(key, vars);
+  }
+  return key;
+};
+
 const formatTimeValue = value => {
   if (!value) return '';
   const timestamp = Number(value);
@@ -50,7 +57,7 @@ const fileLabel = filename => {
 
 const onUpdateInfo = selectedFile => {
   if (!selectedFile) {
-    throw new Error('먼저 파일을 선택해주세요.');
+    throw new Error(translate('selectFileFirst'));
   }
 
   const match = selectedFile.match(/^wuwa_(.+)\.json$/i);
@@ -68,16 +75,16 @@ const onUpdateInfo = selectedFile => {
   })
     .then(response => response.json().then(data => {
       if (!response.ok) {
-        throw new Error(data.error || '정보 업데이트에 실패했습니다.');
+        throw new Error(data.error || translate('updateInfoError'));
       }
-      return `프로필 ${profilename} 정보가 업데이트되었습니다.`;
+      return translate('updateInfoDone', { profile: profilename });
     }));
 };
 
 const wutheringWavesConfig = {
   gameName: 'wuwa',
   dataListQuery: 'wuwa',
-  profilePlaceholder: '예: wuwa_example.json',
+  profilePlaceholder: translate('profilePlaceholder'),
   parseJsonRows,
   getJsonSideRailItems,
   calcTotalStars,
